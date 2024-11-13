@@ -179,10 +179,37 @@ def tensor_map(
         out_index = cuda.local.array(MAX_DIMS, numba.int32)
         in_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+        shared_out_shape = cuda.shared.array(MAX_DIMS, numba.int32)
+        local_i = cuda.threadIdx.x
+        # try to read in like conv example
         # TODO: Implement for Task 3.3.
-        if i < out_size:
-            pass
+        if i < out_size: # gaurding against out of bounds access
+            # out size is local since it is primitive
+            # out_shape.size is not local tho
+            # Copy to local memory once
+            # this is only worthy optimization
+            # because it lowers global reads from 2 to 1
+            # for out shape
+            # out_shape_size = out_shape.size
+            # elements_per_thread = (out_shape_size + THREADS_PER_BLOCK - 1) // THREADS_PER_BLOCK
+            # for j in range(elements_per_thread):
+            #     idx = local_i * elements_per_thread + j
+            #     if idx < out_shape_size:
+            #         shared_out_shape[idx] = out_shape[idx]
+            if local_i < out_shape.size:
+                shared_out_shape[local_i] = out_shape[local_i]
+            cuda.syncthreads()
 
+            to_index(i, shared_out_shape, out_index)
+            broadcast_index(out_index, shared_out_shape, in_shape, in_index)
+
+            # ordinals
+            in_position = index_to_position(in_index, in_strides)
+            out_position = index_to_position(out_index, out_strides)
+
+            # 5 reads and 1 write to global memory
+            out[out_position] = fn(in_storage[in_position])
+            # TOTAL: 
 
     return cuda.jit()(_map)  # type: ignore
 
@@ -223,9 +250,34 @@ def tensor_zip(
         a_index = cuda.local.array(MAX_DIMS, numba.int32)
         b_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+        shared_out_shape = cuda.shared.array(MAX_DIMS, numba.int32)
+        local_i = cuda.threadIdx.x
 
         # TODO: Implement for Task 3.3.
-        raise NotImplementedError("Need to implement for Task 3.3")
+        if i < out_size:
+            # Copy to local memory once
+            # this is only worthy optimization
+            # because it lowers global reads from 2 to 1
+            # for out shape
+            if local_i < out_shape.size:
+                shared_out_shape[local_i] = out_shape[local_i]
+            cuda.syncthreads()
+            # convert cuda block/thread index to multidimensional index
+            to_index(i, shared_out_shape, out_index)
+
+            # broadcast index to match shape
+            broadcast_index(out_index, shared_out_shape, a_shape, a_index)
+            broadcast_index(out_index, shared_out_shape, b_shape, b_index)
+
+            # Calculate ordinal positions for a, b, and out
+            in_position_a = index_to_position(a_index, a_strides)
+            in_position_b = index_to_position(b_index, b_strides)
+            out_position = index_to_position(out_index, out_strides)
+
+            # 7 reads 1 write to global memory
+            out[out_position] = fn(
+                a_storage[in_position_a], b_storage[in_position_b]
+            )
 
     return cuda.jit()(_zip)  # type: ignore
 
@@ -258,7 +310,21 @@ def _sum_practice(out: Storage, a: Storage, size: int) -> None:
     pos = cuda.threadIdx.x
 
     # TODO: Implement for Task 3.3.
-    raise NotImplementedError("Need to implement for Task 3.3")
+    if i < size: # guarding against out of bounds access
+        cache[pos] = a[i]
+    else:
+        cache[pos] = 0.0
+    cuda.syncthreads()
+
+    tree_level = 1
+    while tree_level < BLOCK_DIM:
+        if pos % (2 * tree_level) == 0:
+            cache[pos] += cache[pos + tree_level]
+        tree_level *= 2
+        cuda.syncthreads()
+    
+    if pos == 0:
+        out[cuda.blockIdx.x] = cache[0]
 
 
 jit_sum_practice = cuda.jit()(_sum_practice)
@@ -309,7 +375,29 @@ def tensor_reduce(
         pos = cuda.threadIdx.x
 
         # TODO: Implement for Task 3.3.
-        raise NotImplementedError("Need to implement for Task 3.3")
+        if out_pos < out_size:
+            local_out_shape = cuda.local.array(MAX_DIMS, numba.int32)
+            out_shape_size = out_shape.size
+            for j in range(out_shape_size):
+                local_out_shape[j] = out_shape[j]
+
+            cache[pos] = reduce_value
+
+
+        # for i in prange(len(out)):
+        #     out_index: Index = np.zeros(MAX_DIMS, dtype=np.int32)
+        #     reduce_size: int = a_shape[reduce_dim]
+        #     to_index(i, out_shape, out_index)
+        #     output_position = index_to_position(out_index, out_strides)
+
+        #     reduce_stride = a_strides[reduce_dim]
+        #     baseIdx = index_to_position(out_index, a_strides)
+        #     acc = out[output_position]
+        #     for j in range(reduce_size):
+        #         a_position = baseIdx + j * reduce_stride
+        #         acc = fn(acc, a_storage[a_position])
+
+        #     out[output_position] = acc
 
     return jit(_reduce)  # type: ignore
 
