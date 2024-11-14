@@ -317,15 +317,23 @@ def _sum_practice(out: Storage, a: Storage, size: int) -> None:
     if i < size: # guarding against out of bounds access
         cache[pos] = a[i]
     else:
-        cache[pos] = 0.0
+        cache[pos] = 0.0   
     cuda.syncthreads()
-
-    tree_level = 1
-    while tree_level < BLOCK_DIM:
-        if pos % (2 * tree_level) == 0:
-            cache[pos] += cache[pos + tree_level]
-        tree_level *= 2
-        cuda.syncthreads()
+    
+    if pos % 2 == 0:
+        cache[pos] += cache[pos + 1]
+    cuda.syncthreads()
+    if pos % 4 == 0:
+        cache[pos] += cache[pos + 2]
+    cuda.syncthreads()
+    if pos % 8 == 0:
+        cache[pos] += cache[pos + 4]
+    cuda.syncthreads()
+    if pos % 16 == 0:
+        cache[pos] += cache[pos + 8]
+    cuda.syncthreads()
+    if pos % 32 == 0:
+        cache[pos] += cache[pos + 16]
     
     if pos == 0:
         out[cuda.blockIdx.x] = cache[0]
@@ -335,6 +343,7 @@ jit_sum_practice = cuda.jit()(_sum_practice)
 
 
 def sum_practice(a: Tensor) -> TensorData:
+    """Practice reduction sum by a single block"""
     (size,) = a.shape
     threadsperblock = THREADS_PER_BLOCK
     blockspergrid = (size // THREADS_PER_BLOCK) + 1
@@ -377,17 +386,56 @@ def tensor_reduce(
         out_index = cuda.local.array(MAX_DIMS, numba.int32)
         out_pos = cuda.blockIdx.x
         pos = cuda.threadIdx.x
-
+        # a_pos = cuda.blockIdx.x * cuda.blockDim.x + pos
+        # reduce_size = cuda.shared.array(1, numba.int32)
+        # if pos == 0:
+        #     reduce_size[0] = a_shape[reduce_dim]
+        # cuda.syncthreads()
+        reduce_size = a_shape[reduce_dim]
+        reduce_stride = a_strides[reduce_dim]
+        # if pos < len(out_shape):
+        #     local_out_shape[pos] = out_shape[pos]
+        # else:
+        #     local_out_shape[pos] = 0.0
         # TODO: Implement for Task 3.3.
-        if out_pos < out_size:
-            local_out_shape = cuda.local.array(MAX_DIMS, numba.int32)
-            out_shape_size = out_shape.size
-            for j in range(out_shape_size):
-                local_out_shape[j] = out_shape[j]
+        # memory contention for out shape and a_strides
+        # does not help with performance
+        # to use, need to change to_index method to support shape buffers
+        # of fixed size
+        # shared_out_shape = cuda.shared.array(MAX_DIMS, numba.int32)
+        # shared_a_strides = cuda.shared.array(MAX_DIMS, numba.int32)
+        # reduce contention for out shape and a_strides
+        # if pos < len(out_shape):
+        #     shared_out_shape[pos] = out_shape[pos]
+        # elif pos < MAX_DIMS:
+        #     shared_out_shape[pos] = 0.0
+        # cuda.syncthreads()
+        # if pos < len(a_strides):
+        #     shared_a_strides[pos] = a_strides[pos]
+        # elif pos < MAX_DIMS:
+        #     shared_a_strides[pos] = 0.0
+        # cuda.syncthreads()
+        if out_pos < out_size: # this guard should be unnecessary 
+            # given the way outsize is set in higher order tensor reduce
+            # copy out shape to local memory
+            to_index(out_pos, out_shape, out_index)
+            base_idx = index_to_position(out_index, a_strides)
+            if pos < reduce_size:
+                cache[pos] = fn(reduce_value, a_storage[base_idx + pos * reduce_stride])
+            else:
+                cache[pos] = reduce_value
+            cuda.syncthreads()
 
-            cache[pos] = reduce_value
+            tree_level = 1
+            while tree_level < BLOCK_DIM:
+                if pos % (2 * tree_level) == 0:
+                    cache[pos] = fn(cache[pos], cache[pos + tree_level])
+                tree_level = tree_level * 2
+                cuda.syncthreads()
 
-
+            if pos == 0:
+                out[out_pos] = cache[0]
+        # numba implementation for reference
         # for i in prange(len(out)):
         #     out_index: Index = np.zeros(MAX_DIMS, dtype=np.int32)
         #     reduce_size: int = a_shape[reduce_dim]
