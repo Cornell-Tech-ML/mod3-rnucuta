@@ -74,7 +74,7 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
     # else:
     #     out_index[0] = ordinal
     curr_ord = ordinal + 0
-    for i in range(len(shape)):
+    for i in range(len(shape) -1, -1, -1):
         sh = shape[i]
         out_index[i] = curr_ord % sh
         curr_ord = curr_ord // sh
@@ -145,33 +145,49 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
     # rules: at least one dim, and going from last to first, comparable dims must be equal, one must be size 1, or dim does not exist
     # print(shape1)
     # print(shape2)
-    if len(shape1) < 1 or len(shape2) < 1:  # can't broadcast
-        raise IndexingError(
-            "Shapes cannot be broadcasted. One of the tensors doesn't have dim{}{}".format(
-                shape1, shape2
-            )
-        )
+    # if len(shape1) < 1 or len(shape2) < 1:  # can't broadcast
+    #     raise IndexingError(
+    #         "Shapes cannot be broadcasted. One of the tensors doesn't have dim{}{}".format(
+    #             shape1, shape2
+    #         )
+    #     )
 
-    i = len(shape1) - 1
-    j = len(shape2) - 1
+    # i = len(shape1) - 1
+    # j = len(shape2) - 1
 
-    return_shape = []
-    while i >= 0 or j >= 0:
-        if i >= 0 and j >= 0:
-            if shape1[i] != shape2[j] and (shape1[i] != 1 and shape2[j] != 1):
-                raise IndexingError(f"Shapes cannot be broadcasted on axis {max(i, j)}")
-            return_shape.append(max(shape1[i], shape2[j]))
-            i -= 1
-            j -= 1
-        elif i >= 0:
-            return_shape.append(shape1[i])
-            i -= 1
+    # return_shape = []
+    # while i >= 0 or j >= 0:
+    #     if i >= 0 and j >= 0:
+    #         if shape1[i] != shape2[j] and (shape1[i] != 1 and shape2[j] != 1):
+    #             raise IndexingError(f"Shapes cannot be broadcasted on axis {max(i, j)}")
+    #         return_shape.append(max(shape1[i], shape2[j]))
+    #         i -= 1
+    #         j -= 1
+    #     elif i >= 0:
+    #         return_shape.append(shape1[i])
+    #         i -= 1
+    #     else:
+    #         return_shape.append(shape2[j])
+    #         j -= 1
+
+    # return tuple(return_shape[::-1])
+    a, b = shape1, shape2
+    m = max(len(a), len(b))
+    c_rev = [0] * m
+    a_rev = list(reversed(a))
+    b_rev = list(reversed(b))
+    for i in range(m):
+        if i >= len(a):
+            c_rev[i] = b_rev[i]
+        elif i >= len(b):
+            c_rev[i] = a_rev[i]
         else:
-            return_shape.append(shape2[j])
-            j -= 1
-
-    return tuple(return_shape[::-1])
-
+            c_rev[i] = max(a_rev[i], b_rev[i])
+            if a_rev[i] != c_rev[i] and a_rev[i] != 1:
+                raise IndexingError(f"Broadcast failure {a} {b}")
+            if b_rev[i] != c_rev[i] and b_rev[i] != 1:
+                raise IndexingError(f"Broadcast failure {a} {b}")
+    return tuple(reversed(c_rev))
 
 def strides_from_shape(shape: UserShape) -> UserStrides:
     """Return a contiguous stride for a shape"""
@@ -313,17 +329,25 @@ class TensorData:
             New `TensorData` with the same storage and a new dimension order.
 
         """
+        # assert list(sorted(order)) == list(
+        #     range(len(self.shape))
+        # ), f"Must give a position to each dimension. Shape: {self.shape} Order: {order}"
+
+        # new_shape = tuple(self.shape[int(i)] for i in order)
+        # if self.strides:
+        #     new_stride = tuple(self.strides[int(i)] for i in order)
+        # else:
+        #     new_stride = strides_from_shape(new_shape)
+
+        # return TensorData(self._storage, new_shape, new_stride)
         assert list(sorted(order)) == list(
             range(len(self.shape))
         ), f"Must give a position to each dimension. Shape: {self.shape} Order: {order}"
-
-        new_shape = tuple(self.shape[int(i)] for i in order)
-        if self.strides:
-            new_stride = tuple(self.strides[int(i)] for i in order)
-        else:
-            new_stride = strides_from_shape(new_shape)
-
-        return TensorData(self._storage, new_shape, new_stride)
+        
+        return TensorData(self._storage, 
+                tuple([self.shape[o] for o in order]), 
+                tuple([self._strides[o] for o in order]),
+            )
 
     def to_string(self) -> str:
         """Convert to string"""

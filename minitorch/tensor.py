@@ -324,18 +324,18 @@ class Tensor:
         # return  Add.apply(self, self._ensure_tensor(b))
 
     def __sub__(self, b: TensorLike) -> Tensor:
-        return Add.apply(self, Neg.apply(self._ensure_tensor(b)))
+        return Add.apply(self, -self._ensure_tensor(b))
 
     def __rsub__(self, b: TensorLike) -> Tensor:
-        return Add.apply(self._ensure_tensor(b), Neg.apply(self))
+        return self - b
 
     def __mul__(self, b: TensorLike) -> Tensor:
-        if isinstance(b, Tensor):
-            return Mul.apply(self, b)
+        # if isinstance(b, Tensor):
+        #     return Mul.apply(self, b)
         return Mul.apply(self, self._ensure_tensor(b))
 
     def __rmul__(self, b: TensorLike) -> Tensor:
-        return self * self._ensure_tensor(b)
+        return self * b
 
     def __lt__(self, b: TensorLike) -> Tensor:
         return LT.apply(self, self._ensure_tensor(b))
@@ -349,18 +349,22 @@ class Tensor:
     def __neg__(self) -> Tensor:
         return Neg.apply(self)
 
-    def all(self, dim: Optional[TensorLike] = None) -> Tensor:
+    def all(self, dim: Optional[int] = None) -> Tensor:
         """Returns True if all elements in the tensor are True, False otherwise.
         If dim is specified, perform the operation along that dimension.
         """
-        return All.apply(
-            self,
-            self._ensure_tensor(dim) if dim is not None else self._ensure_tensor(-1),
-        )
+        if dim is None:
+            return All.apply(self.view(self.size), self._ensure_tensor(0))
+        else:
+            return All.apply(self, self._ensure_tensor(dim))
+        # return All.apply(
+        #     self,
+        #     self._ensure_tensor(dim) if dim is not None else self._ensure_tensor(-1),
+        # )
 
-    def is_close(self, b: TensorLike) -> Tensor:
+    def is_close(self, b: Tensor) -> Tensor:
         """Returns tensor indicating elementwise if a and b are close."""
-        return IsClose.apply(self, self._ensure_tensor(b))
+        return IsClose.apply(self, b)
 
     def sigmoid(self) -> Tensor:
         """Returns sigmoid of self"""

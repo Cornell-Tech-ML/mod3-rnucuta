@@ -196,9 +196,9 @@ def tensor_map(
             #     idx = local_i * elements_per_thread + j
             #     if idx < out_shape_size:
             #         shared_out_shape[idx] = out_shape[idx]
-            # if local_i < out_shape.size:
+            # if local_i < len(out_shape):
             #     shared_out_shape[local_i] = out_shape[local_i]
-            # elif local_i >= out_shape.size:
+            # elif 32 < local_i < len(out_shape):
             #     shared_out_shape[local_i] = 0.0
             # cuda.syncthreads()
 

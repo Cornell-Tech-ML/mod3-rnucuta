@@ -125,8 +125,11 @@ class Mul(Function):
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
         """Backward pass for multiplying two tensors"""
-        (a, b) = ctx.saved_values
-        return b.f.mul_zip(b, grad_output), a.f.mul_zip(a, grad_output)
+        a, b = ctx.saved_values
+        return (
+            grad_output.f.mul_zip(b, grad_output),
+            grad_output.f.mul_zip(a, grad_output),
+        )
         # return grad_output.f.mul_zip(grad_output, b), grad_output.f.mul_zip(grad_output, a)
 
 
@@ -201,17 +204,17 @@ class Sum(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
         """Forward pass for sum"""
-        ctx.save_for_backward(
-            a.shape,
-        )
-        d = int(dim.item())
-        return a.f.add_reduce(a, d)
+        # ctx.save_for_backward(
+        #     a.shape, dim
+        # )
+        return a.f.add_reduce(a, int(dim.item()))
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
         """Backward pass for sum"""
-        (original_shape,) = ctx.saved_values
-        return (zeros(original_shape) + 1) * grad_output, 0.0
+        # (original_shape,) = ctx.saved_values
+        # return (zeros(original_shape) + 1) * grad_output, 0.0
+        return grad_output, 0.0
 
 
 class LT(Function):
@@ -254,21 +257,26 @@ class Permute(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, order: Tensor) -> Tensor:
         """Forward pass for permuting the dimensions of a tensor."""
-        dim_list = order.to_numpy().tolist()
-        ctx.save_for_backward(dim_list)
-        return a._new(a._tensor.permute(*dim_list))
+        # dim_list = order.to_numpy().tolist()
+        # ctx.save_for_backward(dim_list)
+        # return a._new(a._tensor.permute(*dim_list))
+        ctx.save_for_backward(order)
+        return a._new(a._tensor.permute(*[int(order[i]) for i in range(order.size)]))
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
         """Backward pass for permute."""
-        (order,) = ctx.saved_values
+        # (order,) = ctx.saved_values
 
-        # Create the inverse order for the backward pass
-        inverse_order = [0] * len(order)
-        for i, o in enumerate(order):
-            inverse_order[int(o)] = i
+        # # Create the inverse order for the backward pass
+        # inverse_order = [0] * len(order)
+        # for i, o in enumerate(order):
+        #     inverse_order[int(o)] = i
 
-        return grad_output._new(grad_output._tensor.permute(*inverse_order)), 0.0
+        # return grad_output._new(grad_output._tensor.permute(*inverse_order)), 0.0
+        order : Tensor = ctx.saved_values[0]
+        order2 : List[int] = [a[0] for a in sorted(enumerate([order[i] for i in range(order.size)]), key=lambda x: x[1])]
+        return grad_output._new(grad_output._tensor.permute(*order2)), 0.0
 
 
 class View(Function):
@@ -443,10 +451,8 @@ def grad_central_difference(
     up[ind] = epsilon
     vals1 = [x if j != arg else x + up for j, x in enumerate(vals)]
     vals2 = [x if j != arg else x - up for j, x in enumerate(vals)]
-    delta: Tensor = f(*vals1).sum() - f(*vals2).sum()
-
+    delta = f(*vals1).sum() - f(*vals2).sum()
     return delta[0] / (2.0 * epsilon)
-
 
 def grad_check(f: Any, *vals: Tensor) -> None:
     """Check whether autodiff matches central difference."""
