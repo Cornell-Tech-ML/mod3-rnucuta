@@ -487,7 +487,30 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     """
     BLOCK_DIM = 32
     # TODO: Implement for Task 3.3.
-    raise NotImplementedError("Need to implement for Task 3.3")
+    # basic structure of matrix multiply
+    # for s in range(0, K, TPB):
+    #     sharedA[local_i, local_j] = a[i, s + local_j]
+    #     sharedB[local_i, local_j] = b[s + local_i, j]
+    #     ...
+    #     for k in range(TPB):
+    #         t += sharedA[local_i, k] * sharedB[k, local_j]
+    # out[i, j] = t
+    # only one block per grid
+    i = cuda.threadIdx.x
+    j = cuda.threadIdx.y
+    sharedA = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
+    sharedB = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
+
+    if i < size and j < size:
+        sharedA[i, j] = a[i * size + j]
+        sharedB[i, j] = b[i * size + j]
+        cuda.syncthreads()
+
+        acc = 0.0
+        for k in range(size):
+            acc += sharedA[i, k] * sharedB[k, j]
+        out[i * size + j] = acc
+
 
 
 jit_mm_practice = jit(_mm_practice)
@@ -557,6 +580,13 @@ def _tensor_matrix_multiply(
     #    c) Compute the dot produce for position c[i, j]
     # TODO: Implement for Task 3.4.
     raise NotImplementedError("Need to implement for Task 3.4")
+
+    # blockspergrid = (
+    #         (out.shape[1] + (THREADS_PER_BLOCK - 1)) // THREADS_PER_BLOCK,
+    #         (out.shape[2] + (THREADS_PER_BLOCK - 1)) // THREADS_PER_BLOCK,
+    #         out.shape[0],
+    #     )
+    #     threadsperblock = (THREADS_PER_BLOCK, THREADS_PER_BLOCK, 1)
 
 
 tensor_matrix_multiply = jit(_tensor_matrix_multiply)
