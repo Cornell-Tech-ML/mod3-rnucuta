@@ -187,8 +187,8 @@ def tensor_map(
 
         else:
             for i in prange(len(out)):
-                out_index: Index = np.zeros(MAX_DIMS, dtype=np.int32)
-                in_index: Index = np.zeros(MAX_DIMS, dtype=np.int32)
+                out_index: Index = np.empty(MAX_DIMS, dtype=np.int32)
+                in_index: Index = np.empty(MAX_DIMS, dtype=np.int32)
                 # Convert flat index to multidimensional index
                 # to_index function is useful just for getting
                 # continous set of indices
@@ -263,9 +263,9 @@ def tensor_zip(
         else:
             # global broacasting case
             for i in prange(n):
-                out_index = np.zeros(MAX_DIMS, dtype=np.int32)
-                in_index_a = np.zeros(MAX_DIMS, dtype=np.int32)
-                in_index_b = np.zeros(MAX_DIMS, dtype=np.int32)
+                out_index = np.empty(MAX_DIMS, dtype=np.int32)
+                in_index_a = np.empty(MAX_DIMS, dtype=np.int32)
+                in_index_b = np.empty(MAX_DIMS, dtype=np.int32)
                 to_index(i, out_shape, out_index)
 
                 broadcast_index(out_index, out_shape, a_shape, in_index_a)
@@ -318,7 +318,7 @@ def tensor_reduce(
             raise ValueError(f"Tensor dimensions cannot exceed {MAX_DIMS}")
 
         for i in prange(len(out)):
-            out_index: Index = np.zeros(MAX_DIMS, dtype=np.int32)
+            out_index: Index = np.empty(MAX_DIMS, dtype=np.int32)
             reduce_size: int = a_shape[reduce_dim]
             to_index(i, out_shape, out_index)
             output_position = index_to_position(out_index, out_strides)

@@ -198,6 +198,8 @@ def tensor_map(
             #         shared_out_shape[idx] = out_shape[idx]
             if local_i < out_shape.size:
                 shared_out_shape[local_i] = out_shape[local_i]
+            elif local_i >= out_shape.size:
+                shared_out_shape[local_i] = 0.0
             cuda.syncthreads()
 
             to_index(i, shared_out_shape, out_index)
@@ -261,6 +263,8 @@ def tensor_zip(
             # for out shape
             if local_i < out_shape.size:
                 shared_out_shape[local_i] = out_shape[local_i]
+            elif local_i >= out_shape.size:
+                shared_out_shape[local_i] = 0.0
             cuda.syncthreads()
             # convert cuda block/thread index to multidimensional index
             to_index(i, shared_out_shape, out_index)
