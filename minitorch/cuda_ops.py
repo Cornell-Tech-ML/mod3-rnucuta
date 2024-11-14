@@ -179,8 +179,8 @@ def tensor_map(
         out_index = cuda.local.array(MAX_DIMS, numba.int32)
         in_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
-        shared_out_shape = cuda.shared.array(MAX_DIMS, numba.int32)
-        local_i = cuda.threadIdx.x
+        # shared_out_shape = cuda.shared.array(MAX_DIMS, numba.int32)
+        # local_i = cuda.threadIdx.x
         # try to read in like conv example
         # TODO: Implement for Task 3.3.
         if i < out_size: # gaurding against out of bounds access
@@ -196,14 +196,14 @@ def tensor_map(
             #     idx = local_i * elements_per_thread + j
             #     if idx < out_shape_size:
             #         shared_out_shape[idx] = out_shape[idx]
-            if local_i < out_shape.size:
-                shared_out_shape[local_i] = out_shape[local_i]
-            elif local_i >= out_shape.size:
-                shared_out_shape[local_i] = 0.0
-            cuda.syncthreads()
+            # if local_i < out_shape.size:
+            #     shared_out_shape[local_i] = out_shape[local_i]
+            # elif local_i >= out_shape.size:
+            #     shared_out_shape[local_i] = 0.0
+            # cuda.syncthreads()
 
-            to_index(i, shared_out_shape, out_index)
-            broadcast_index(out_index, shared_out_shape, in_shape, in_index)
+            to_index(i, out_shape, out_index)
+            broadcast_index(out_index, out_shape, in_shape, in_index)
 
             # ordinals
             in_position = index_to_position(in_index, in_strides)
@@ -252,8 +252,8 @@ def tensor_zip(
         a_index = cuda.local.array(MAX_DIMS, numba.int32)
         b_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
-        shared_out_shape = cuda.shared.array(MAX_DIMS, numba.int32)
-        local_i = cuda.threadIdx.x
+        # shared_out_shape = cuda.shared.array(MAX_DIMS, numba.int32)
+        # local_i = cuda.threadIdx.x
 
         # TODO: Implement for Task 3.3.
         if i < out_size:
@@ -261,17 +261,17 @@ def tensor_zip(
             # this is only worthy optimization
             # because it lowers global reads from 2 to 1
             # for out shape
-            if local_i < out_shape.size:
-                shared_out_shape[local_i] = out_shape[local_i]
-            elif local_i >= out_shape.size:
-                shared_out_shape[local_i] = 0.0
-            cuda.syncthreads()
+            # if local_i < out_shape.size:
+            #     shared_out_shape[local_i] = out_shape[local_i]
+            # elif local_i >= out_shape.size:
+            #     shared_out_shape[local_i] = 0.0
+            # cuda.syncthreads()
             # convert cuda block/thread index to multidimensional index
-            to_index(i, shared_out_shape, out_index)
+            to_index(i, out_shape, out_index)
 
             # broadcast index to match shape
-            broadcast_index(out_index, shared_out_shape, a_shape, a_index)
-            broadcast_index(out_index, shared_out_shape, b_shape, b_index)
+            broadcast_index(out_index, out_shape, a_shape, a_index)
+            broadcast_index(out_index, out_shape, b_shape, b_index)
 
             # Calculate ordinal positions for a, b, and out
             in_position_a = index_to_position(a_index, a_strides)
