@@ -233,13 +233,13 @@ class SimpleOps(TensorOps):
         # assumption is that shape given is 3d of dimensions (x, y), (y, z)
         # view as (y, x, 1), (y, 1, z)
         # assert a_shape[-1] == b_shape[-2]
-        # o, p = a.shape[0], b.shape[1]
-        # a_t = a.view([1] + list(a.shape)).permute(range(len(a.shape), -1, -1))
-        # b_v = b.view(b.shape[0], 1, b.shape[1])
+        o, p = a.shape[0], b.shape[1]
+        a_t = a.view([1] + list(a.shape)).permute(range(len(a.shape), -1, -1))
+        b_v = b.view(b.shape[0], 1, b.shape[1])
 
-        # intermediate = (b_v * a_t).sum(0).view(o, p)
-        # return intermediate
-        pass
+        intermediate = (b_v * a_t).sum(0).view(o, p)
+        return intermediate
+        # pass
 
     is_cuda = False
 

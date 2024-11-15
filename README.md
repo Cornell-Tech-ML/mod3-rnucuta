@@ -535,7 +535,57 @@ Time per epoch: 0.13361714506149291 seconds
 #### CUDA
 `python ./project/run_fast_tensor.py --BACKEND cuda --HIDDEN 100 --DATASET xor --RATE 0.05`
 ```
-
+Epoch  0  loss  6.044794019546739 correct 34
+Epoch  10  loss  6.483873077930687 correct 42
+Epoch  20  loss  4.00324038997205 correct 44
+Epoch  30  loss  3.936296831728005 correct 42
+Epoch  40  loss  2.5613720491505756 correct 43
+Epoch  50  loss  5.263441617406232 correct 44
+Epoch  60  loss  5.220279144503183 correct 44
+Epoch  70  loss  0.6432735911034722 correct 44
+Epoch  80  loss  4.636653380247641 correct 46
+Epoch  90  loss  2.779211981678332 correct 44
+Epoch  100  loss  3.2704291910220187 correct 45
+Epoch  110  loss  3.0408902599476315 correct 44
+Epoch  120  loss  4.180820050036237 correct 44
+Epoch  130  loss  2.7398944045919116 correct 46
+Epoch  140  loss  3.010824683184583 correct 46
+Epoch  150  loss  1.442095709186708 correct 46
+Epoch  160  loss  2.7237891071460005 correct 45
+Epoch  170  loss  3.6492208248202713 correct 46
+Epoch  180  loss  3.0002973368247314 correct 47
+Epoch  190  loss  2.6608547569780425 correct 45
+Epoch  200  loss  2.859753457469946 correct 47
+Epoch  210  loss  2.669255335211075 correct 48
+Epoch  220  loss  2.9202320644285584 correct 48
+Epoch  230  loss  1.171821813943529 correct 47
+Epoch  240  loss  2.433697837272064 correct 46
+Epoch  250  loss  1.810164558670327 correct 47
+Epoch  260  loss  2.084155980658444 correct 46
+Epoch  270  loss  0.5890040322214438 correct 48
+Epoch  280  loss  0.7269561957612821 correct 48
+Epoch  290  loss  2.7660654796261044 correct 47
+Epoch  300  loss  0.3984052483041522 correct 47
+Epoch  310  loss  0.5298162929971278 correct 47
+Epoch  320  loss  0.4482692792941158 correct 48
+Epoch  330  loss  0.49969582270804036 correct 48
+Epoch  340  loss  1.260956204414308 correct 48
+Epoch  350  loss  0.9044282332473641 correct 47
+Epoch  360  loss  1.0102037937211745 correct 48
+Epoch  370  loss  0.556333736209488 correct 48
+Epoch  380  loss  1.5047869909769704 correct 48
+Epoch  390  loss  1.686680994324461 correct 48
+Epoch  400  loss  1.9905795321029705 correct 48
+Epoch  410  loss  0.9359412545855506 correct 48
+Epoch  420  loss  0.5847569369397827 correct 48
+Epoch  430  loss  2.28905257753568 correct 48
+Epoch  440  loss  2.912518394521735 correct 47
+Epoch  450  loss  1.176961868325273 correct 49
+Epoch  460  loss  1.244709700623898 correct 48
+Epoch  470  loss  1.3292078783960501 correct 48
+Epoch  480  loss  2.066284465627145 correct 49
+Epoch  490  loss  1.4912479325396537 correct 48
+Time per epoch: 1.691621169090271 seconds
 ```
 
 ### Larger run (Hidden = 200)

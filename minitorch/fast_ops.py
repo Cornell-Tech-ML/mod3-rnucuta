@@ -331,7 +331,7 @@ def tensor_reduce(
             acc = out[output_position]
             for j in range(reduce_size):
                 a_position = baseIdx + j * reduce_stride
-                acc = fn(acc, a_storage[a_position])
+                acc = fn(acc, float(a_storage[a_position]))
 
             out[output_position] = acc
 

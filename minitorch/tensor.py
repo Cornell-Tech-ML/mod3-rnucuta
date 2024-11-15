@@ -382,7 +382,7 @@ class Tensor:
         """Returns log of self"""
         return Exp.apply(self)
 
-    def sum(self, dim: Optional[TensorLike] = None) -> Tensor:
+    def sum(self, dim: Optional[int] = None) -> Tensor:
         """Returns sum of self"""
         if dim is None:  # Sum over all dimensions
             # return Sum.apply(self, self._ensure_tensor(-1))
@@ -394,7 +394,7 @@ class Tensor:
         else:
             return Sum.apply(self, self._ensure_tensor(dim))
 
-    def mean(self, dim: Optional[TensorLike] = None) -> Tensor:
+    def mean(self, dim: Optional[int] = None) -> Tensor:
         """Takes mean of self. Dimension is optional"""
         # if dim is not None:
         #     dim = self._ensure_tensor(dim)
@@ -405,9 +405,9 @@ class Tensor:
         # )
         # return self.sum(dim) / axis_total
         if dim is not None:
-            return self.sum(dim) / self.shape[dim]
+            return self.sum(dim) / float(self.shape[dim])
         else:
-            return self.sum() / self.size
+            return self.sum() / float(self.size)
 
     def view(self, *shape: int) -> Tensor:
         """Changes view of tensor. Unsure how this is supposed to take dim optionally"""

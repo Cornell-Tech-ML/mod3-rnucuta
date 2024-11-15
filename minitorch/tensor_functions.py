@@ -123,7 +123,7 @@ class Mul(Function):
         return a.f.mul_zip(a, b)
 
     @staticmethod
-    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
+    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
         """Backward pass for multiplying two tensors"""
         a, b = ctx.saved_values
         return (
