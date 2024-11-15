@@ -501,6 +501,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     sharedA = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
     sharedB = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
 
+    # assumption: since only one block, size <= 32
     if i < size and j < size:
         sharedA[i, j] = a[i * size + j]
         sharedB[i, j] = b[i * size + j]
@@ -509,6 +510,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
         acc = 0.0
         for k in range(size):
             acc += sharedA[i, k] * sharedB[k, j]
+
         out[i * size + j] = acc
 
 
@@ -517,6 +519,7 @@ jit_mm_practice = jit(_mm_practice)
 
 
 def mm_practice(a: Tensor, b: Tensor) -> TensorData:
+    """Practice matrix multiply where threads per block is square and constant size"""
     (size, _) = a.shape
     threadsperblock = (THREADS_PER_BLOCK, THREADS_PER_BLOCK)
     blockspergrid = 1
@@ -579,14 +582,59 @@ def _tensor_matrix_multiply(
     #    b) Copy into shared memory for b matrix
     #    c) Compute the dot produce for position c[i, j]
     # TODO: Implement for Task 3.4.
-    raise NotImplementedError("Need to implement for Task 3.4")
+    # each block is responsible for a element of the batch dim
+    
+    # shape (B, I, K), (B, K, J)
+    # Number of tiles along the K dimension
+    K = a_shape[-1]
+    J = b_shape[-1]
+    I = a_shape[-2]
+    # num_tiles = (K + BLOCK_DIM - 1) // BLOCK_DIM
+    # Calculate the global memory address for A and B
+    a_batch_offset = batch * a_batch_stride
+    b_batch_offset = batch * b_batch_stride
 
-    # blockspergrid = (
-    #         (out.shape[1] + (THREADS_PER_BLOCK - 1)) // THREADS_PER_BLOCK,
-    #         (out.shape[2] + (THREADS_PER_BLOCK - 1)) // THREADS_PER_BLOCK,
-    #         out.shape[0],
-    #     )
-    #     threadsperblock = (THREADS_PER_BLOCK, THREADS_PER_BLOCK, 1)
+    a_I_strides = a_strides[-2]
+    a_K_strides = a_strides[-1]
+    b_K_strides = b_strides[-2]
+    b_I_strides = b_strides[-1]
+
+    acc = 0.0 # accumulator for dot product, key is that it is
+    # saved over all tiles
+
+    for tile in range(0, K, BLOCK_DIM):
+        # Calculate the global K index for this tile
+        # k = tile * BLOCK_DIM + cuda.threadIdx.y
+        # calculate non-shared dims
+        a_col = tile + pi
+        b_row = tile + pj
+
+        # If i and a_col are in global bounds and block bounds
+        # load into shared memory
+        if i < I and a_col < K:
+            a_pos = a_batch_offset + i * a_I_strides + a_col * a_K_strides
+            a_shared[pi, pj] = a_storage[a_pos]
+        else:
+            a_shared[pi, pj] = 0.0
+        # Same for B
+        if b_row < K and j < J:
+            b_pos = b_batch_offset + b_row * b_K_strides + j * b_I_strides
+            b_shared[pi, pj] = b_storage[b_pos]
+        else:
+            b_shared[pi, pj] = 0.0
+        cuda.syncthreads() # sync before performing dot product
+
+        # Perform the dot product for this tile
+        for t in range(BLOCK_DIM):
+            acc += a_shared[pi, t] * b_shared[t, pj]
+        # cuda.syncthreads()
+
+    # After all tiles are processed, write the accumulated value to the output
+    if i < I and j < J:
+        # Calculate the memory address for the output
+        out_batch_offset = batch * out_strides[0]
+        out_pos = out_batch_offset + i * out_strides[-2] + j * out_strides[-1]
+        out[out_pos] = acc
 
 
 tensor_matrix_multiply = jit(_tensor_matrix_multiply)
