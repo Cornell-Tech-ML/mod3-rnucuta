@@ -274,8 +274,13 @@ class Permute(Function):
         #     inverse_order[int(o)] = i
 
         # return grad_output._new(grad_output._tensor.permute(*inverse_order)), 0.0
-        order : Tensor = ctx.saved_values[0]
-        order2 : List[int] = [a[0] for a in sorted(enumerate([order[i] for i in range(order.size)]), key=lambda x: x[1])]
+        order: Tensor = ctx.saved_values[0]
+        order2: List[int] = [
+            a[0]
+            for a in sorted(
+                enumerate([order[i] for i in range(order.size)]), key=lambda x: x[1]
+            )
+        ]
         return grad_output._new(grad_output._tensor.permute(*order2)), 0.0
 
 
@@ -453,6 +458,7 @@ def grad_central_difference(
     vals2 = [x if j != arg else x - up for j, x in enumerate(vals)]
     delta = f(*vals1).sum() - f(*vals2).sum()
     return delta[0] / (2.0 * epsilon)
+
 
 def grad_check(f: Any, *vals: Tensor) -> None:
     """Check whether autodiff matches central difference."""

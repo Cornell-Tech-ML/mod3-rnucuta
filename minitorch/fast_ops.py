@@ -30,6 +30,7 @@ Fn = TypeVar("Fn")
 
 
 def njit(fn: Fn, **kwargs: Any) -> Fn:
+    """Jit compile a function for fast CPU execution."""
     return _njit(inline="always", **kwargs)(fn)  # type: ignore
 
 
@@ -168,8 +169,8 @@ def tensor_map(
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        # TODO: Implement for Task 3.1.
-        # fn = njit()(fn)
+        # similar implementatino to standard tensor_map except with
+        # prange instead of range
         # Main loop in parallel
         # All indices use numpy buffers
         if len(out_shape) > MAX_DIMS or len(in_shape) > MAX_DIMS:
@@ -239,7 +240,8 @@ def tensor_zip(
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        # TODO: Implement for Task 3.1.
+        # similar implementatino to standard tensor_zip except with
+        # prange instead of range
         if (
             len(out_shape) > MAX_DIMS
             or len(a_shape) > MAX_DIMS
@@ -313,7 +315,8 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        # TODO: Implement for Task 3.1.
+        # similar implementatino to standard tensor_reduce except with
+        # prange instead of range
         if len(out_shape) > MAX_DIMS or len(a_shape) > MAX_DIMS:
             raise ValueError(f"Tensor dimensions cannot exceed {MAX_DIMS}")
 
@@ -378,41 +381,25 @@ def _tensor_matrix_multiply(
         None : Fills in `out`
 
     """
-    # TODO: Implement for Task 3.2.
     assert a_shape[-1] == b_shape[-2], "a_shape[-1] != b_shape[-2]"
     a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
     out_batch_stride = out_strides[0] if out_shape[0] > 1 else 0
-    total_rows = out_shape[-2]
-    total_cols = out_shape[-1]
-    a_row_stride = a_strides[-2]
-    a_col_stride = a_strides[-1]
-    b_row_stride = b_strides[-2]
-    b_col_stride = b_strides[-1]
-    out_row_stride = out_strides[-2]
-    out_col_stride = out_strides[-1]
-    total_out_elements = len(out)
-
-    for idx in prange(total_out_elements):
-        # Compute batch, row, and column indices from the flattened index
-        batch = idx // (total_rows * total_cols)
-        rem_batch_dim = idx % (total_rows * total_cols)
-        row = rem_batch_dim // total_cols
-        col = rem_batch_dim % total_cols
-
-        # Compute current base indices for A, B, and Out tensors for current idx
-        a_base = batch * a_batch_stride
-        b_base = batch * b_batch_stride
-        out_base = batch * out_batch_stride
-
-        acc = 0.0
-        for i in range(a_shape[-1]):
-            # convert i to row for a and col for b based on current base
-            a_idx = a_base + row * a_row_stride + i * a_col_stride
-            b_idx = b_base + i * b_row_stride + col * b_col_stride
-            acc += a_storage[a_idx] * b_storage[b_idx]
-
-        out[out_base + row * out_row_stride + col * out_col_stride] = acc
+    for batch in prange(out_shape[0]):
+        batch_idx_a = batch * a_batch_stride
+        batch_idx_b = batch * b_batch_stride
+        out_batch_idx = batch * out_batch_stride
+        for r in range(out_shape[-2]):
+            for c in range(out_shape[-1]):
+                acc = 0.0
+                for i in range(a_shape[-1]):  # want to do the inner loop before col
+                    # like BLAS implementation to be more cache friendly,
+                    # but this causes global writes
+                    acc += (
+                        a_storage[batch_idx_a + r * a_strides[-2] + i * a_strides[-1]]
+                        * b_storage[batch_idx_b + i * b_strides[-2] + c * b_strides[-1]]
+                    )
+                out[out_batch_idx + r * out_strides[-2] + c * out_strides[-1]] = acc
 
 
 tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)

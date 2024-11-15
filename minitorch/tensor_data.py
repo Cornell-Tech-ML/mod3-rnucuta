@@ -74,7 +74,7 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
     # else:
     #     out_index[0] = ordinal
     curr_ord = ordinal + 0
-    for i in range(len(shape) -1, -1, -1):
+    for i in range(len(shape) - 1, -1, -1):
         sh = shape[i]
         out_index[i] = curr_ord % sh
         curr_ord = curr_ord // sh
@@ -197,6 +197,7 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
             if b_rev[i] != c_rev[i] and b_rev[i] != 1:
                 raise IndexingError(f"Broadcast failure {a} {b}")
     return tuple(reversed(c_rev))
+
 
 def strides_from_shape(shape: UserShape) -> UserStrides:
     """Return a contiguous stride for a shape"""
@@ -352,11 +353,12 @@ class TensorData:
         assert list(sorted(order)) == list(
             range(len(self.shape))
         ), f"Must give a position to each dimension. Shape: {self.shape} Order: {order}"
-        
-        return TensorData(self._storage, 
-                tuple([self.shape[o] for o in order]), 
-                tuple([self._strides[o] for o in order]),
-            )
+
+        return TensorData(
+            self._storage,
+            tuple([self.shape[o] for o in order]),
+            tuple([self._strides[o] for o in order]),
+        )
 
     def to_string(self) -> str:
         """Convert to string"""
