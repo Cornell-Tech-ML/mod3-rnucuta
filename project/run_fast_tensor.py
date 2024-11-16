@@ -6,6 +6,8 @@ import minitorch
 
 import time
 
+import numpy as np
+
 datasets = minitorch.datasets
 FastTensorBackend = minitorch.TensorBackend(minitorch.FastOps)
 if numba.cuda.is_available():
@@ -18,6 +20,10 @@ def default_log_fn(epoch, total_loss, correct, losses):
 
 def RParam(*shape, backend):
     r = minitorch.rand(shape, backend=backend) - 0.5
+    return minitorch.Parameter(r)
+
+def XParam(*shape, backend):
+    r = minitorch.xavier(shape, backend=backend)
     return minitorch.Parameter(r)
 
 
@@ -41,7 +47,7 @@ class Network(minitorch.Module):
 class Linear(minitorch.Module):
     def __init__(self, in_size, out_size, backend):
         super().__init__()
-        self.weights = RParam(in_size, out_size, backend=backend)
+        self.weights = XParam(in_size, out_size, backend=backend)
         s = minitorch.zeros((out_size,), backend=backend)
         s = s + 0.1
         self.bias = minitorch.Parameter(s)
@@ -50,7 +56,6 @@ class Linear(minitorch.Module):
     def forward(self, x):
         # dense layer forward pass
         return x @ self.weights.value + self.bias.value
-
 
 class FastTrain:
     def __init__(self, hidden_layers, backend=FastTensorBackend):
