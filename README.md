@@ -33,7 +33,7 @@ The files that will be synced are:
 
 
 # Diagnostics from `python parallel_check.py` for `map`, `zip`, `reduce`, `matmul`
-
+All 4 functions are fully optimized according to the diagnostics.
 ```
 MAP
 
@@ -361,6 +361,7 @@ None
 ```
 
 # Training logs
+For CPU training on `hidden=100`, the training time per epoch averaged about `0.143` seconds. For CUDA, it averaged about `1.659` seconds. When doubling hidden size to `200`, the training time for CPU time per epoch nearly doubled for XOR to `0.236` seconds, while CUDA did not significantly change, increasing to about `1.745` seconds. It is important to note that the CUDA training is slower than the CPU training at the momement because the proper optimizations have not been implemented yet. I believe that this is due to the fact that the CUDA training is not utilizing the full GPU occupancy with the `THREADSPERBLOCK` constant.
 ## Simple Training Log
 #### CPU
 `python ./project/run_fast_tensor.py --BACKEND cpu --HIDDEN 100 --DATASET simple --RATE 0.05`
