@@ -384,6 +384,7 @@ def rand(
     tensor.requires_grad_(requires_grad)
     return tensor
 
+
 def xavier(
     shape: UserShape,
     backend: TensorBackend = SimpleBackend,
@@ -400,31 +401,32 @@ def xavier(
     Returns:
     -------
         :class:`Tensor` : new tensor with Xavier initialization
+
     """
     # Calculate total size and fan_in/fan_out from shape
     size = int(operators.prod(shape))
     if len(shape) >= 2:
         fan_in, fan_out = shape[-2:]  # Use last two dimensions
     else:
-        fan_in = fan_out = size ** 0.5  # Fallback for 1D tensors
-    
+        fan_in = fan_out = size**0.5  # Fallback for 1D tensors
+
     # Generate uniform random values
     vals = [random.uniform(-1.0, 1.0) for _ in range(size)]
-    
+
     # Calculate mean and adjust to zero
     mean = sum(vals) / size
     vals = [v - mean for v in vals]
-    
+
     # Calculate current variance
     variance = sum(v * v for v in vals) / size
-    
+
     # Calculate desired variance and scaling factor
     desired_variance = 2.0 / (fan_in + fan_out)
     scaling_factor = (desired_variance / variance) ** 0.5
-    
+
     # Scale the values
     vals = [v * scaling_factor for v in vals]
-    
+
     # Create and return tensor
     tensor = minitorch.Tensor.make(vals, shape, backend=backend)
     tensor.requires_grad_(requires_grad)
