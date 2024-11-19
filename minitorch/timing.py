@@ -2,12 +2,16 @@ import minitorch
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+from typing import Union
 
 FastTensorBackend = minitorch.TensorBackend(minitorch.FastOps)
 GPUBackend = minitorch.TensorBackend(minitorch.CudaOps)
 
 
-def run_matmul(backend: any, size: int = 16) -> None:
+def run_matmul(
+    backend: Union[minitorch.TensorBackend, minitorch.FastOps, minitorch.CudaOps],
+    size: int = 16,
+) -> None:
     """Run matrix multiplication using the specified backend and size."""
     batch_size = 2
 
@@ -16,7 +20,7 @@ def run_matmul(backend: any, size: int = 16) -> None:
     _ = x @ y
 
 
-def plot_timings(times: np.ndarray, output_path: str = "timings_plot.png") -> None:
+def plot_timings(times: dict, output_path: str = "timings_plot.png") -> None:
     """Plots the timings of the matrix multiplication for different sizes.
     It takes a dictionary of times and an output path for the plot as input.
     """
