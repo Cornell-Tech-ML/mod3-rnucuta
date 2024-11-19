@@ -22,6 +22,7 @@ def RParam(*shape, backend):
     r = minitorch.rand(shape, backend=backend) - 0.5
     return minitorch.Parameter(r)
 
+
 def XParam(*shape, backend):
     r = minitorch.xavier(shape, backend=backend)
     return minitorch.Parameter(r)
@@ -56,6 +57,7 @@ class Linear(minitorch.Module):
     def forward(self, x):
         # dense layer forward pass
         return x @ self.weights.value + self.bias.value
+
 
 class FastTrain:
     def __init__(self, hidden_layers, backend=FastTensorBackend):
@@ -111,6 +113,7 @@ class FastTrain:
             total_time += time.time() - start_time
         print(f"Time per epoch: {total_time/max_epochs} seconds")
 
+
 if __name__ == "__main__":
     import argparse
 
@@ -139,4 +142,3 @@ if __name__ == "__main__":
     FastTrain(
         HIDDEN, backend=FastTensorBackend if args.BACKEND != "gpu" else GPUBackend
     ).train(data, RATE)
-

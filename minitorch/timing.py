@@ -2,14 +2,13 @@ import minitorch
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import Union
 
 FastTensorBackend = minitorch.TensorBackend(minitorch.FastOps)
 GPUBackend = minitorch.TensorBackend(minitorch.CudaOps)
 
 
 def run_matmul(
-    backend: Union[minitorch.TensorBackend, minitorch.FastOps, minitorch.CudaOps],
+    backend: minitorch.TensorBackend,
     size: int = 16,
 ) -> None:
     """Run matrix multiplication using the specified backend and size."""
