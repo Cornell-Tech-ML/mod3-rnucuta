@@ -7,7 +7,7 @@ FastTensorBackend = minitorch.TensorBackend(minitorch.FastOps)
 GPUBackend = minitorch.TensorBackend(minitorch.CudaOps)
 
 
-def run_matmul(backend : any, size:int=16) -> None:
+def run_matmul(backend: any, size: int = 16) -> None:
     """Run matrix multiplication using the specified backend and size."""
     batch_size = 2
 
@@ -15,7 +15,8 @@ def run_matmul(backend : any, size:int=16) -> None:
     y = minitorch.rand((batch_size, size, size), backend=backend)
     _ = x @ y
 
-def plot_timings(times : np.ndarray, output_path : str ="timings_plot.png") -> None:
+
+def plot_timings(times: np.ndarray, output_path: str = "timings_plot.png") -> None:
     """Plots the timings of the matrix multiplication for different sizes.
     It takes a dictionary of times and an output path for the plot as input.
     """
@@ -26,7 +27,7 @@ def plot_timings(times : np.ndarray, output_path : str ="timings_plot.png") -> N
     plt.figure(figsize=(10, 6))
     plt.plot(sizes, fast_times, marker="o", label="FastTensorBackend")
     plt.plot(sizes, gpu_times, marker="o", label="GPUBackend")
-    plt.yscale('log')
+    plt.yscale("log")
     plt.xlabel("Matrix Size")
     plt.ylabel("Average Time (s)")
     plt.title("Matrix Multiplication Timing: FastTensorBackend vs GPUBackend")
