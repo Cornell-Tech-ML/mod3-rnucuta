@@ -13,7 +13,7 @@ def run_matmul(backend : any, size:int=16) -> None:
 
     x = minitorch.rand((batch_size, size, size), backend=backend)
     y = minitorch.rand((batch_size, size, size), backend=backend)
-    z = x @ y
+    _ = x @ y
 
 def plot_timings(times : np.ndarray, output_path : str ="timings_plot.png") -> None:
     """Plots the timings of the matrix multiplication for different sizes.
