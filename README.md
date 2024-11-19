@@ -360,7 +360,11 @@ No allocation hoisting found
 None
 ```
 
-# Training logs
+# 3.4: Timing Analysis
+![Timing Analysis Plot](./timings_plot_log.png)
+After running `project/timing.py`, the graph clearly shows that as matrix size increases, the runtime of the parallel matrix multiply exponentially outgrows the CUDA matrix multiply. By the time `matrix size = 1000`, the runtime differs by an order of magnitude. Note that the above graph is plotted on log scale, there is a normal scale graph found under `timings_plot.png`
+
+# 3.5: Training logs
 For CPU training on `hidden=100`, the training time per epoch averaged about `0.143` seconds. For CUDA, it averaged about `1.659` seconds. When doubling hidden size to `200`, the training time for CPU time per epoch nearly doubled for XOR to `0.236` seconds, while CUDA did not significantly change, increasing to about `1.745` seconds. It is important to note that the CUDA training is slower than the CPU training at the momement because the proper optimizations have not been implemented yet. I believe that this is due to the fact that the CUDA training is not utilizing the full GPU occupancy with the `THREADSPERBLOCK` constant.
 ## Simple Training Log
 #### CPU
